@@ -40,7 +40,7 @@ Omit app-specific config directories (browsers, editors, terminals, agents, etc.
 
 ## Web apps
 
-Export Omarchy web-app launchers under `~/.local/share/applications` identified by `omarchy-launch-webapp`, plus their user-owned icon assets in `~/.local/share/icons/hicolor` if present. Preview additions, changed launchers and slave-only web-app launchers; back up any modified/removed slave launchers/icons before reconciling. Never blindly sync all `.desktop` files, browser profiles, cookies or credentials. Web apps may start signed out on the slave. If a launcher refers to a user-installed executable not supplied by package/mise/uv, flag it as requiring manual action rather than pretending it works.
+Export Omarchy web-app launchers under `~/.local/share/applications` identified by `omarchy-launch-webapp` or the shipped HEY/Zoom web-app handlers, plus their user-owned icon assets in `~/.local/share/icons/hicolor` if present. Preview additions, changed launchers and slave-only web-app launchers; back up any modified/removed slave launchers/icons before reconciling. Never blindly sync all `.desktop` files, browser profiles, cookies or credentials. Web apps may start signed out on the slave. If a launcher refers to a user-installed executable not supplied by package/mise/uv, flag it as requiring manual action rather than pretending it works.
 
 ## Safety and verification
 

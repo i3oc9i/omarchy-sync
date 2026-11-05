@@ -46,6 +46,7 @@ class PlanningTests(unittest.TestCase):
             "packages": {"omarchy": "repo", "gedit": "repo", "linux-omarchy": "repo",
                          "nvidia-580xx-dkms": "repo", "intel-ucode": "repo"},
             "mise": {"deno": "2.9.8"}, "uv": {"other": "other==1.0"},
+            "mise_sources": {"deno": "user"},
         }
 
     def test_previews_apps_tools_and_protects_hardware(self):
@@ -83,6 +84,12 @@ class PlanningTests(unittest.TestCase):
         desired = {**self.manifest, "appearance": {**self.manifest["appearance"], "theme": "Tokyo Night"}}
         changed = build_plan(desired, self.files, self.target, self.home, FakeRunner())
         self.assertEqual(changed["appearance_change"], {"theme": "Tokyo Night"})
+
+    def test_system_mise_tools_are_not_removed_by_user_sync(self):
+        target = {**self.target, "mise_sources": {"deno": "system"}}
+        plan = build_plan(self.manifest, self.files, target, self.home, FakeRunner())
+        self.assertEqual(plan["mise_remove"], [])
+        self.assertTrue(any("deno" in item for item in plan["manual_only"]))
 
     def test_slave_only_webapp_is_removed_and_second_run_is_noop(self):
         app = self.home / ".local/share/applications/WhatsApp.desktop"

@@ -1,4 +1,5 @@
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -54,6 +55,27 @@ class InventoryTests(unittest.TestCase):
         inventory, manual = collect_inventory(self.home, FakeRunner())
         self.assertEqual(inventory["uv"], {})
         self.assertTrue(any("browser-use" in item for item in manual))
+
+    def test_tracks_mise_config_origin_before_allowing_removal(self):
+        runner = FakeRunner()
+        runner.outputs[("mise", "ls", "--json")] = json.dumps({
+            "local": [{"version": "1", "installed": True, "active": True,
+                       "source": {"path": str(self.home / ".config/mise/config.toml")}}],
+            "system": [{"version": "2", "installed": True, "active": True,
+                        "source": {"path": "/etc/mise/conf.d/omarchy-tools.toml"}}],
+        })
+        inventory, _ = collect_inventory(self.home, runner)
+        self.assertEqual(inventory["mise_sources"], {"local": "user", "system": "system"})
+
+    def test_no_foreign_packages_is_normal_on_pacman_exit_one(self):
+        class EmptyForeign(FakeRunner):
+            def run(self, argv):
+                if argv == ["pacman", "-Qm"]:
+                    raise subprocess.CalledProcessError(1, argv, output="")
+                return super().run(argv)
+
+        inventory, _ = collect_inventory(self.home, EmptyForeign())
+        self.assertEqual(inventory["packages"]["chromium"], "repo")
 
 
 if __name__ == "__main__":

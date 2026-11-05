@@ -13,11 +13,20 @@ class Runner:
     def run(self, argv: list[str]) -> str:
         return subprocess.run(argv, check=True, capture_output=True, text=True).stdout
 
+    def interactive(self, argv: list[str]) -> None:
+        subprocess.run(argv, check=True)
+
 
 def collect_inventory(home: Path, runner: Runner) -> tuple[dict, list[str]]:
     manual = []
     explicit = runner.run(["pacman", "-Qqe"]).splitlines()
-    local = {line.split()[0] for line in runner.run(["pacman", "-Qm"]).splitlines() if line.split()}
+    try:
+        foreign_output = runner.run(["pacman", "-Qm"])
+    except subprocess.CalledProcessError as error:
+        if error.returncode != 1 or error.stdout or error.stderr:
+            raise
+        foreign_output = ""
+    local = {line.split()[0] for line in foreign_output.splitlines() if line.split()}
     packages = {}
     for package in explicit:
         if not PACKAGE.fullmatch(package):
@@ -26,6 +35,7 @@ def collect_inventory(home: Path, runner: Runner) -> tuple[dict, list[str]]:
         packages[package] = "local" if package in local else "repo"
 
     mise = {}
+    mise_sources = {}
     for name, versions in json.loads(runner.run(["mise", "ls", "--json"])).items():
         if not TOOL.fullmatch(name) or "://" in name or "@" in name.split(":")[0]:
             manual.append("unsupported mise tool identifier")
@@ -40,6 +50,14 @@ def collect_inventory(home: Path, runner: Runner) -> tuple[dict, list[str]]:
             manual.append("unsafe mise version: " + name)
             continue
         mise[name] = version
+        source = active[0].get("source") or {}
+        source_path = source.get("path") if isinstance(source, dict) else None
+        if isinstance(source_path, str) and Path(source_path).is_relative_to(Path(home) / ".config/mise"):
+            mise_sources[name] = "user"
+        elif isinstance(source_path, str) and Path(source_path).is_relative_to(Path("/etc/mise")):
+            mise_sources[name] = "system"
+        else:
+            mise_sources[name] = "unknown"
 
     installed_uv = {}
     for line in runner.run(["uv", "tool", "list"]).splitlines():
@@ -64,4 +82,4 @@ def collect_inventory(home: Path, runner: Runner) -> tuple[dict, list[str]]:
             uv[tool] = f"{name}=={version}"
         except (OSError, KeyError, TypeError, ValueError, tomllib.TOMLDecodeError):
             manual.append("uv tool requires manual installation: " + tool)
-    return {"packages": packages, "mise": mise, "uv": uv}, manual
+    return {"packages": packages, "mise": mise, "mise_sources": mise_sources, "uv": uv}, manual

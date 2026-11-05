@@ -63,6 +63,19 @@ class PortableTests(unittest.TestCase):
         files, _, _ = collect_portable(self.home, FakeRunner())
         self.assertNotIn(".config/omarchy/shell.json", files)
 
+    def test_includes_omarchy_hey_and_zoom_webapp_handlers(self):
+        self.put(".local/share/applications/HEY.desktop",
+                 "[Desktop Entry]\nExec=omarchy-webapp-handler-hey %u\nIcon=hey\n")
+        self.put(".local/share/applications/Zoom.desktop",
+                 "[Desktop Entry]\nExec=omarchy-webapp-handler-zoom %u\nIcon=zoom\n")
+        self.put(".local/share/applications/Unsafe.desktop",
+                 "[Desktop Entry]\nExec=omarchy-webapp-handler-unknown %u\nIcon=unsafe\n")
+        files, _, warnings = collect_portable(self.home, FakeRunner())
+        self.assertIn(".local/share/applications/HEY.desktop", files)
+        self.assertIn(".local/share/applications/Zoom.desktop", files)
+        self.assertNotIn(".local/share/applications/Unsafe.desktop", files)
+        self.assertTrue(any("Unsafe.desktop" in warning for warning in warnings))
+
     def test_is_allowed_never_grants_monitor_or_unrelated_config(self):
         self.assertTrue(is_allowed(".config/omarchy/plugins/btw.idle/Service.qml"))
         self.assertFalse(is_allowed(".config/hypr/monitors.lua"))

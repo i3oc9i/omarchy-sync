@@ -52,7 +52,10 @@ def _webapp_icon(text: str) -> str | None:
         args = shlex.split(values.get("Exec", ""))
     except ValueError:
         return None
-    if len(args) != 2 or args[0] != "omarchy-launch-webapp" or not args[1].startswith(("https://", "http://")):
+    standard = len(args) == 2 and args[0] == "omarchy-launch-webapp" and args[1].startswith(("https://", "http://"))
+    builtin_handler = len(args) == 2 and (args[0], args[1]) in (
+        ("omarchy-webapp-handler-hey", "%u"), ("omarchy-webapp-handler-zoom", "%u"))
+    if not (standard or builtin_handler):
         return None
     icon = values.get("Icon", "")
     return icon if ICON_NAME.fullmatch(icon) else ""

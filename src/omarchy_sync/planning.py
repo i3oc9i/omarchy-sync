@@ -41,7 +41,7 @@ def build_plan(manifest: dict, files: dict[str, bytes], target: dict, home: Path
     result = {"packages_install": [], "packages_remove": [], "mise_install": {}, "mise_remove": [],
               "uv_install": {}, "uv_remove": [], "files_write": [], "files_delete": [],
               "manual_only": list(manifest["manual_only"]), "blockers": [],
-              "appearance": manifest["appearance"]}
+              "appearance": manifest["appearance"], "desired_packages": sorted(manifest["packages"])}
     desired = manifest["packages"]
     current = target["packages"]
     for package in sorted(desired.keys() - current.keys()):
@@ -72,7 +72,13 @@ def build_plan(manifest: dict, files: dict[str, bytes], target: dict, home: Path
         wanted, existing = manifest[system], target[system]
         result[system + "_install"] = {name: value for name, value in sorted(wanted.items())
                                        if existing.get(name) != value}
-        result[system + "_remove"] = sorted(existing.keys() - wanted.keys())
+        extras = sorted(existing.keys() - wanted.keys())
+        if system == "mise":
+            result["mise_remove"] = [name for name in extras if target.get("mise_sources", {}).get(name) == "user"]
+            result["manual_only"].extend("mise tool needs manual review: " + name for name in extras
+                                         if name not in result["mise_remove"])
+        else:
+            result["uv_remove"] = extras
 
     existing_files, current_appearance, warnings = collect_portable(Path(home), runner)
     result["appearance_change"] = {key: value for key, value in manifest["appearance"].items()
