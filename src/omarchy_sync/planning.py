@@ -74,7 +74,10 @@ def build_plan(manifest: dict, files: dict[str, bytes], target: dict, home: Path
                                        if existing.get(name) != value}
         result[system + "_remove"] = sorted(existing.keys() - wanted.keys())
 
-    existing_files, _, warnings = collect_portable(Path(home), runner)
+    existing_files, current_appearance, warnings = collect_portable(Path(home), runner)
+    result["appearance_change"] = {key: value for key, value in manifest["appearance"].items()
+                                    if value and current_appearance.get(key) != value}
+    result["modes"] = manifest.get("modes", {})
     result["manual_only"].extend(warnings)
     for name, data in sorted(files.items()):
         path = Path(home) / name

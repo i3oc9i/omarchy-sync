@@ -77,6 +77,13 @@ class PlanningTests(unittest.TestCase):
         self.assertEqual(plan["packages_remove"], [])
         self.assertTrue(any("gedit" in item for item in plan["manual_only"]))
 
+    def test_appearance_only_applies_when_different(self):
+        plan = build_plan(self.manifest, self.files, self.target, self.home, FakeRunner())
+        self.assertEqual(plan["appearance_change"], {})
+        desired = {**self.manifest, "appearance": {**self.manifest["appearance"], "theme": "Tokyo Night"}}
+        changed = build_plan(desired, self.files, self.target, self.home, FakeRunner())
+        self.assertEqual(changed["appearance_change"], {"theme": "Tokyo Night"})
+
     def test_slave_only_webapp_is_removed_and_second_run_is_noop(self):
         app = self.home / ".local/share/applications/WhatsApp.desktop"
         app.parent.mkdir(parents=True)
