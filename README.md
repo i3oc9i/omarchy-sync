@@ -4,7 +4,7 @@ One-way, USB-carried snapshot from the **master** Omarchy laptop to a **slave** 
 
 ## First-time setup
 
-Copy `omarchy-personalization-sync` and the entire `src/omarchy_sync/` directory together to a folder on your USB drive. Use the same folder to run the tool on either laptop. Python 3, Omarchy, pacman, mise and uv must be available; there are no Python package dependencies. Do **not** use an archive provided by someone else: it can contain user-owned hooks/plugins that run code after import.
+Copy `omarchy-personalization-sync` and the entire `src/omarchy_sync/` directory together to a folder on your USB drive. Use the same folder to run the tool on either laptop. Python 3.11+, Omarchy, pacman, mise and uv must be available; there are no Python package dependencies. Do **not** use an archive provided by someone else: it can contain user-owned hooks/plugins that run code after import.
 
 ## Transfer
 
@@ -22,7 +22,7 @@ python omarchy-personalization-sync plan /path/to/USB/personalization.tar.gz
 python omarchy-personalization-sync apply /path/to/USB/personalization.tar.gz
 ```
 
-`plan` changes nothing. `apply` prints the plan again and requires typing `APPLY`. It refuses an archive created on the same machine or a different Omarchy version, and needs internet to fetch missing apps/tools. It installs missing packages, mise tools and uv tools before it touches user files, then removes slave-only app/tool candidates after backup and preflight. It protects system/hardware packages and refuses unsafe or unknown removals. Review every listed addition/removal before confirming. On failure, stop and inspect the error; fix the cause and rerun the same `plan` before retrying `apply`.
+`plan` changes nothing. `apply` prints the plan again and requires typing `APPLY`. It refuses an archive created on the same machine or a different Omarchy version, and needs internet to fetch missing apps/tools. It installs missing packages, mise tools and uv tools before it touches user files, then removes slave-only app/tool candidates after backup and preflight. It protects system/hardware packages and refuses unsafe or unknown removals. Only slave-only pacman packages with a desktop launcher qualify for automatic removal; extra command-line packages appear as manual-review items. Review every listed addition/removal **including `package_removal_details`** before confirming. On failure, stop and inspect the error; fix the cause and rerun the same `plan` before retrying `apply`.
 
 Portable settings that are changed or removed are backed up under `~/.local/state/omarchy-personalization-sync/backups/<timestamp>/` on the slave. Package removals are **not** undone by these backups. Hyprland/shell may reload; logging out and in may be needed for all changes to take effect. The slave's monitor configuration, bootloader, drivers and firmware remain unchanged.
 

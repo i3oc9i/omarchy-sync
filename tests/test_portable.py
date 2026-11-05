@@ -43,6 +43,7 @@ class PortableTests(unittest.TestCase):
             ".config/hypr/monitors.lua", ".config/hypr/xdph.conf",
             ".config/omarchy/hooks/post-update.d/setup-fingerprint.hook",
             ".config/omarchy/shell.json.bak.123", ".config/chromium/Default/Preferences",
+            ".config/omarchy/plugins/btw.idle/.env", ".config/omarchy/plugins/btw.idle/token.key",
             ".local/share/applications/Custom.desktop",
             ".local/share/applications/Other.desktop",
         ):

@@ -95,6 +95,15 @@ class ArchiveTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "version"):
             read_archive(archive)
 
+    def test_malformed_manifest_types_and_option_like_tools_rejected(self):
+        for field, value in (("packages", []), ("mise", {"--evil": "1"}),
+                             ("uv", {"helper": "--force"}), ("modes", {"x": 0o7777})):
+            with self.subTest(field=field):
+                manifest = {**self.manifest, field: value}
+                archive = self.make_tar([("manifest.json", json.dumps(manifest).encode())])
+                with self.assertRaises(ValueError):
+                    read_archive(archive)
+
 
 if __name__ == "__main__":
     unittest.main()

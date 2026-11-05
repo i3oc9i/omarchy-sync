@@ -34,6 +34,8 @@ class FakeRunner:
             return "repos-update v2.2.0\n" if "chromium" in self.packages else ""
         if argv[:2] == ["pacman", "-Si"]:
             return "Repository: extra\n"
+        if argv[:2] == ["pacman", "-Ql"]:
+            return "gedit /usr/share/applications/gedit.desktop\n" if argv[-1] == "gedit" else ""
         if argv[:3] == ["pacman", "-Rns", "--print"]:
             return argv[-1] + "\n"
         if argv[:3] == ["omarchy", "pkg", "add"]:

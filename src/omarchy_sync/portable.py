@@ -19,6 +19,11 @@ def is_allowed(path: str) -> bool:
         return False
     if "/.git/" in path or path.endswith((".bak", ".sample")) or ".bak." in path:
         return False
+    basename = Path(path).name.lower()
+    if (basename in (".env", "credentials", "credentials.json", "secrets.json") or
+            basename.endswith((".pem", ".key", ".p12", ".pfx")) or
+            any(word in basename for word in ("password", "token", "secret", "credential"))):
+        return False
     if path.startswith(".config/omarchy/"):
         relative = path.removeprefix(".config/omarchy/")
         return relative in OMARCHY_FILES or any(relative.startswith(p) and len(relative) > len(p) for p in OMARCHY_TREES)

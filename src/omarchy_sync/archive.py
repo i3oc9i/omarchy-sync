@@ -2,6 +2,7 @@ import hashlib
 import io
 import json
 import os
+import re
 import stat
 import tarfile
 import tempfile
@@ -12,6 +13,9 @@ MAX_BYTES = 512 * 1024 * 1024
 MAX_MANIFEST = 1024 * 1024
 REQUIRED = {"format_version", "omarchy_version", "origin_machine_fingerprint", "username",
             "packages", "mise", "uv", "appearance", "manual_only", "files"}
+PKG = re.compile(r"^[a-zA-Z0-9@._+][a-zA-Z0-9@._+-]*$")
+MISE = re.compile(r"^[a-zA-Z0-9_][a-zA-Z0-9_:+./@-]*$")
+UV_SPEC = re.compile(r"^[a-zA-Z0-9._-]+==[a-zA-Z0-9.!+_-]+$")
 
 
 def safe_name(name: str) -> bool:
@@ -27,8 +31,41 @@ def checked_manifest(manifest: dict) -> None:
     if not isinstance(manifest["files"], dict) or len(manifest["files"]) > MAX_FILES:
         raise ValueError("invalid file inventory")
     for name, digest in manifest["files"].items():
-        if not isinstance(name, str) or not safe_name(name) or not isinstance(digest, str) or len(digest) != 64:
+        if not isinstance(name, str) or not safe_name(name) or not isinstance(digest, str) or not re.fullmatch("[0-9a-f]{64}", digest):
             raise ValueError("invalid file entry")
+    for key in ("omarchy_version", "origin_machine_fingerprint", "username"):
+        value = manifest[key]
+        if not isinstance(value, str) or not value or len(value) > 128 or any(c in value for c in "\r\n\x00"):
+            raise ValueError("invalid " + key)
+    if manifest["username"] != "btw":
+        raise ValueError("unexpected username")
+    for key, allowed in (("packages", {"repo", "local"}), ("mise", None), ("uv", None)):
+        value = manifest[key]
+        if not isinstance(value, dict) or len(value) > 4096:
+            raise ValueError("invalid " + key)
+        for name, detail in value.items():
+            if not isinstance(name, str) or not (MISE if key == "mise" else PKG).fullmatch(name) or "://" in name:
+                raise ValueError("invalid " + key + " name")
+            if key == "packages":
+                valid = detail in allowed if isinstance(detail, str) else False
+            elif key == "mise":
+                valid = isinstance(detail, str) and bool(re.fullmatch(r"[a-zA-Z0-9._+-]+", detail))
+            else:
+                valid = isinstance(detail, str) and bool(UV_SPEC.fullmatch(detail))
+            if not valid:
+                raise ValueError("invalid " + key + " spec")
+    if not isinstance(manifest["appearance"], dict) or not {"theme", "font", "background_filename"} <= manifest["appearance"].keys():
+        # Empty appearance is permitted in archive-only tests, but not in a real export.
+        if manifest["appearance"] != {}:
+            raise ValueError("invalid appearance")
+    for key, value in manifest["appearance"].items():
+        if key not in {"theme", "font", "background_filename"} or not isinstance(value, str) or len(value) > 256 or any(c in value for c in "/\r\n\x00"):
+            raise ValueError("invalid appearance value")
+    if not isinstance(manifest["manual_only"], list) or any(not isinstance(w, str) or len(w) > 500 for w in manifest["manual_only"]):
+        raise ValueError("invalid manual-only inventory")
+    modes = manifest.get("modes", {})
+    if not isinstance(modes, dict) or not modes.keys() <= manifest["files"].keys() or any(type(mode) is not int or not 0 <= mode <= 0o777 for mode in modes.values()):
+        raise ValueError("invalid file modes")
 
 
 def _json_pairs(pairs):

@@ -19,6 +19,8 @@ class FakeRunner:
             return self.removed.get(argv[-1], argv[-1]) + "\n"
         if argv[:2] == ["pacman", "-Si"]:
             return "Repository : extra\n"
+        if argv[:2] == ["pacman", "-Ql"]:
+            return argv[-1] + " /usr/share/applications/" + argv[-1] + ".desktop\n" if argv[-1] == "gedit" else ""
         if argv == ["omarchy", "theme", "current"]:
             return "Retro 82\n"
         if argv == ["omarchy", "font", "current"]:
@@ -78,12 +80,40 @@ class PlanningTests(unittest.TestCase):
         self.assertEqual(plan["packages_remove"], [])
         self.assertTrue(any("gedit" in item for item in plan["manual_only"]))
 
+    def test_does_not_autoremove_slave_hardware_or_unknown_cli_packages(self):
+        target = {**self.target, "packages": {**self.target["packages"], "bolt": "repo",
+                                                "libfprint-git": "repo", "mystery-tool": "repo"}}
+        plan = build_plan(self.manifest, self.files, target, self.home, FakeRunner())
+        self.assertEqual(plan["packages_remove"], ["gedit"])
+        self.assertTrue(any("mystery-tool" in item for item in plan["manual_only"]))
+
+    def test_preview_names_all_transitive_package_removals(self):
+        plan = build_plan(self.manifest, self.files, self.target, self.home,
+                          FakeRunner({"gedit": "gedit\ngedit-dependency"}))
+        self.assertEqual(plan["package_removal_details"]["gedit"], ["gedit", "gedit-dependency"])
+
+    def test_refuses_orphan_icon_without_matching_webapp(self):
+        icon = ".local/share/icons/hicolor/256x256/apps/private.png"
+        files = {**self.files, icon: b"private icon"}
+        manifest = {**self.manifest, "files": {**self.manifest["files"], icon: hashlib.sha256(files[icon]).hexdigest()}}
+        with self.assertRaisesRegex(ValueError, "icon"):
+            build_plan(manifest, files, self.target, self.home, FakeRunner())
+
     def test_appearance_only_applies_when_different(self):
         plan = build_plan(self.manifest, self.files, self.target, self.home, FakeRunner())
         self.assertEqual(plan["appearance_change"], {})
         desired = {**self.manifest, "appearance": {**self.manifest["appearance"], "theme": "Tokyo Night"}}
         changed = build_plan(desired, self.files, self.target, self.home, FakeRunner())
         self.assertEqual(changed["appearance_change"], {"theme": "Tokyo Night"})
+
+    def test_switching_theme_reselects_background_even_if_name_matches(self):
+        background = self.home / ".local/state/omarchy/current/background"
+        background.parent.mkdir(parents=True)
+        background.write_bytes(b"same selected image")
+        desired = {**self.manifest, "appearance": {**self.manifest["appearance"],
+                                                 "theme": "Tokyo Night", "background_filename": "background"}}
+        plan = build_plan(desired, self.files, self.target, self.home, FakeRunner())
+        self.assertEqual(plan["appearance_change"]["background_filename"], "background")
 
     def test_system_mise_tools_are_not_removed_by_user_sync(self):
         target = {**self.target, "mise_sources": {"deno": "system"}}
