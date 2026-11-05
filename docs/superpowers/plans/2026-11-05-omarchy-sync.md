@@ -1,4 +1,6 @@
-# Omarchy Personalization Sync Implementation Plan
+# omarchy-sync — implementation plan
+
+> Historical plan: the project and CLI were subsequently renamed to `omarchy-sync` and packaged for `uv tool install`. See `README.md` for current commands.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -8,7 +10,7 @@
 
 **Tech Stack:** Python 3 standard library (`argparse`, `json`, `tarfile`, `hashlib`, `tomllib`, `unittest`), native `omarchy`, `pacman`, `mise`, `uv` commands.
 
-**Spec:** `docs/superpowers/specs/2026-11-05-omarchy-personalization-sync-design.md`
+**Spec:** `docs/superpowers/specs/2026-11-05-omarchy-sync-design.md`
 
 ## Global Constraints
 

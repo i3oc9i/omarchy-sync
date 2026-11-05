@@ -1,0 +1,16 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "omarchy-sync"
+version = "0.1.0"
+description = "Transfer portable Omarchy personalization between laptops"
+readme = "README.md"
+requires-python = ">=3.11"
+
+[project.scripts]
+omarchy-sync = "omarchy_sync.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/omarchy_sync"]

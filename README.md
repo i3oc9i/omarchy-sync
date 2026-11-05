@@ -1,25 +1,44 @@
-# Omarchy personalization sync
+# omarchy-sync
 
-One-way, USB-carried snapshot from the **master** Omarchy laptop to a **slave** laptop. Both use the Linux username `btw`. This tool is not part of Omarchy and is not installed system-wide.
+One-way, USB-carried snapshot from the **master** Omarchy laptop to a **slave** laptop. Both use the Linux username `btw`. This is a standalone CLI installed with uv, not part of Omarchy.
 
-## First-time setup
+## Install on both laptops
 
-Copy `omarchy-personalization-sync` and the entire `src/omarchy_sync/` directory together to a folder on your USB drive. Use the same folder to run the tool on either laptop. Python 3.11+, Omarchy, pacman, mise and uv must be available; there are no Python package dependencies. Do **not** use an archive provided by someone else: it can contain user-owned hooks/plugins that run code after import.
+Like `repos_update`, install the project from its directory with:
+
+```bash
+uv tool install .
+```
+
+To install it on the slave without copying the project sources, build a wheel on the master and carry it on the USB drive:
+
+```bash
+uv build
+cp dist/omarchy_sync-*.whl /path/to/USB/
+```
+
+On the slave, install that wheel (use the actual wheel filename):
+
+```bash
+uv tool install /path/to/USB/omarchy_sync-0.1.0-py3-none-any.whl
+```
+
+For a later local rebuild, run `uv tool install . --force` in the project directory; for a new wheel on the slave, use `uv tool install --force /path/to/USB/<new-wheel>.whl`. Python 3.11+, Omarchy, pacman, mise and uv must be available; the CLI has no Python runtime dependencies. Ensure your uv tool bin directory is on `PATH` (see `uv tool update-shell`). Do **not** use an archive provided by someone else: it can contain user-owned hooks/plugins that run code after import.
 
 ## Transfer
 
-From the folder containing the script on the **master**, with your USB drive mounted:
+On the **master**, with your USB drive mounted:
 
 ```bash
-python omarchy-personalization-sync export /path/to/USB/personalization.tar.gz
+omarchy-sync export /path/to/USB/personalization.tar.gz
 ```
 
 On the **slave**, first update Omarchy and restart if required:
 
 ```bash
 omarchy update
-python omarchy-personalization-sync plan /path/to/USB/personalization.tar.gz
-python omarchy-personalization-sync apply /path/to/USB/personalization.tar.gz
+omarchy-sync plan /path/to/USB/personalization.tar.gz
+omarchy-sync apply /path/to/USB/personalization.tar.gz
 ```
 
 `plan` changes nothing. `apply` prints the plan again and requires typing `APPLY`. It refuses an archive created on the same machine or a different Omarchy version, and needs internet to fetch missing apps/tools. It installs missing packages, mise tools and uv tools before it touches user files, then removes slave-only app/tool candidates after backup and preflight. It protects system/hardware packages and refuses unsafe or unknown removals. Only slave-only pacman packages with a desktop launcher qualify for automatic removal; extra command-line packages appear as manual-review items. Review every listed addition/removal **including `package_removal_details`** before confirming. On failure, stop and inspect the error; fix the cause and rerun the same `plan` before retrying `apply`.

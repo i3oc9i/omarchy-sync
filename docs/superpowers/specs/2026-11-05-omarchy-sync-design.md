@@ -1,4 +1,4 @@
-# One-way Omarchy personalization sync — design
+# omarchy-sync — design
 
 ## Intent
 
@@ -12,7 +12,7 @@ The current laptop (`btw`) is always the master; a second Omarchy laptop (also `
 - Include active mise-managed tools and uv-installed tools, reinstalling them rather than copying caches or executables.
 - Do not copy app configuration, browser profiles, accounts, credentials, documents, or other personal files.
 - Keep the slave's hardware-specific settings and packages intact. Both Linux usernames are `btw`.
-- Keep the project in `~/Projects/omarchy-personalization-sync`.
+- Keep the project in `~/Projects/omarchy-sync` (renamed when the uv package was added).
 
 ## CLI and artifact
 
